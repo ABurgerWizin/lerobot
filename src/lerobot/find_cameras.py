@@ -260,7 +260,7 @@ def save_images_from_all_cameras(
         logger.warning("No cameras could be connected. Aborting image save.")
         return
 
-    logger.info(f"Starting image capture for {record_time_s} seconds from {len(cameras_to_use)} cameras.")
+    logger.warn(f"Starting image capture for {record_time_s} seconds from {len(cameras_to_use)} cameras.")
     start_time = time.perf_counter()
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(cameras_to_use) * 2) as executor:
