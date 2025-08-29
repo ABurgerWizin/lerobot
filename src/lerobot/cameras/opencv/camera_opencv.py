@@ -127,6 +127,7 @@ class OpenCVCamera(Camera):
         self.rotation: int | None = get_cv2_rotation(config.rotation)
         self.backend: int = get_cv2_backend()
 
+        print(f"Initiate OpenCVCamera obejct with width {self.width} x height {self.height}")
         if self.height and self.width:
             self.capture_width, self.capture_height = self.width, self.height
             if self.rotation in [cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_90_COUNTERCLOCKWISE]:
@@ -228,21 +229,66 @@ class OpenCVCamera(Camera):
     def _validate_width_and_height(self) -> None:
         """Validates and sets the camera's frame capture width and height."""
 
-        width_success = self.videocapture.set(cv2.CAP_PROP_FRAME_WIDTH, float(self.capture_width))
-        height_success = self.videocapture.set(cv2.CAP_PROP_FRAME_HEIGHT, float(self.capture_height))
+        # width_success = self.videocapture.set(cv2.CAP_PROP_FRAME_WIDTH, float(self.capture_width))
+        # height_success = self.videocapture.set(cv2.CAP_PROP_FRAME_HEIGHT, float(self.capture_height))
 
+        success, format_used = OpenCVCamera.try_set_camera_resolution(self.videocapture, float(self.capture_width), float(self.capture_height))
+        if success:
+            aspect_type, aspect_ratio = OpenCVCamera.get_aspect_ratio(float(self.capture_width), float(self.capture_height))
+
+        print(f"Resetting camera resolution to {format_used}")
         actual_width = int(round(self.videocapture.get(cv2.CAP_PROP_FRAME_WIDTH)))
-        if not width_success or self.capture_width != actual_width:
+        if not success or self.capture_width != actual_width:
             raise RuntimeError(
-                f"{self} failed to set capture_width={self.capture_width} ({actual_width=}, {width_success=})."
+                f"{self} failed to set capture_width={self.capture_width} ({actual_width=}, {success=})."
             )
 
         actual_height = int(round(self.videocapture.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-        if not height_success or self.capture_height != actual_height:
+        if not success or self.capture_height != actual_height:
             raise RuntimeError(
-                f"{self} failed to set capture_height={self.capture_height} ({actual_height=}, {height_success=})."
+                f"{self} failed to set capture_height={self.capture_height} ({actual_height=}, {success=})."
             )
-
+        
+    @staticmethod
+    def get_aspect_ratio(width, height):
+                """Calculate and classify aspect ratio"""
+                ratio = width / height
+                
+                if abs(ratio - 16/9) < 0.1:
+                    return "16:9", ratio
+                elif abs(ratio - 4/3) < 0.1:
+                    return "4:3", ratio
+                else:
+                    return "other", ratio
+                
+    @staticmethod
+    def try_set_camera_resolution(camera, target_width, target_height, preferred_formats=['MJPG', 'H264', 'YUYV']):
+            """Try to set camera resolution with different pixel formats"""
+            
+            for fmt in preferred_formats:
+                # Set pixel format
+                if fmt == 'MJPG':
+                    fourcc = cv2.VideoWriter.fourcc('M','J','P','G')
+                elif fmt == 'YUYV':
+                    fourcc = cv2.VideoWriter.fourcc('Y','U','Y','V')
+                elif fmt == 'H264':
+                    fourcc = cv2.VideoWriter.fourcc('H','2','6','4')
+                else:
+                    continue
+                    
+                camera.set(cv2.CAP_PROP_FOURCC, fourcc)
+                camera.set(cv2.CAP_PROP_FRAME_WIDTH, target_width)
+                camera.set(cv2.CAP_PROP_FRAME_HEIGHT, target_height)
+                
+                # Verify the resolution was actually set
+                actual_width = int(camera.get(cv2.CAP_PROP_FRAME_WIDTH))
+                actual_height = int(camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                
+                if actual_width == target_width and actual_height == target_height:
+                    return True, fmt
+            
+            return False, None
+    
     @staticmethod
     def find_cameras() -> list[dict[str, Any]]:
         """
@@ -256,37 +302,119 @@ class OpenCVCamera(Camera):
             where each dictionary contains 'type', 'id' (port index or path),
             and the default profile properties (width, height, fps, format).
         """
+        possible_paths = sorted(Path("/dev").glob("video*"), key=lambda p: p.name)
+        targets_to_scan = [str(p) for p in possible_paths]
+
         found_cameras_info = []
 
-        if platform.system() == "Linux":
-            possible_paths = sorted(Path("/dev").glob("video*"), key=lambda p: p.name)
-            targets_to_scan = [str(p) for p in possible_paths]
-        else:
-            targets_to_scan = list(range(MAX_OPENCV_INDEX))
+        # Comprehensive resolution lists by aspect ratio
+        RESOLUTIONS_16_9 = [
+            (1920, 1080),  # Full HD
+            (1280, 720),   # HD
+            (1024, 576),   # 576p
+            (854, 480),    # 480p wide
+            (640, 360),    # 360p wide
+        ]
+
+        RESOLUTIONS_4_3 = [
+            (1600, 1200),  # UXGA
+            (1280, 960),   # 960p
+            (1024, 768),   # XGA
+            (800, 600),    # SVGA
+            (640, 480),    # VGA
+        ]
+
+        # Some cameras support both, so we'll also try mixed ratios
+        RESOLUTIONS_OTHER = [
+            (1920, 1440),  # 4:3 at high res
+            (1440, 1080),  # 4:3 variant
+            (960, 720),    # 4:3 variant
+        ]
+
+
+        def probe_camera_native_resolution(camera):
+            """Try to determine the camera's native/default aspect ratio"""
+            # Get the camera's default resolution without setting anything
+            default_width = int(camera.get(cv2.CAP_PROP_FRAME_WIDTH))
+            default_height = int(camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            aspect_type, aspect_ratio = OpenCVCamera.get_aspect_ratio(default_width, default_height)
+            
+            return aspect_type, default_width, default_height
+
+        def find_best_resolution_for_camera(camera, target_device):
+            """Find the best resolution for a specific camera based on its characteristics"""
+            
+            # First, probe the camera's native aspect ratio
+            native_aspect, default_width, default_height = probe_camera_native_resolution(camera)
+            print(f"Camera {target_device}: Native resolution {default_width}x{default_height} ({native_aspect})")
+            
+            # Choose resolution list based on native aspect ratio
+            if native_aspect == "16:9":
+                primary_resolutions = RESOLUTIONS_16_9
+                fallback_resolutions = RESOLUTIONS_4_3 + RESOLUTIONS_OTHER
+            elif native_aspect == "4:3":
+                primary_resolutions = RESOLUTIONS_4_3
+                fallback_resolutions = RESOLUTIONS_16_9 + RESOLUTIONS_OTHER
+            else:
+                primary_resolutions = RESOLUTIONS_OTHER + RESOLUTIONS_16_9
+                fallback_resolutions = RESOLUTIONS_4_3
+            
+            # Try primary resolutions first (matching native aspect ratio)
+            for width, height in primary_resolutions:
+                success, format_used = OpenCVCamera.try_set_camera_resolution(camera, width, height)
+                if success:
+                    aspect_type, aspect_ratio = OpenCVCamera.get_aspect_ratio(width, height)
+                    return width, height, format_used, aspect_type, aspect_ratio
+            
+            # If primary fails, try fallback resolutions
+            print(f"Primary aspect ratio resolutions failed for {target_device}, trying fallback...")
+            for width, height in fallback_resolutions:
+                success, format_used = OpenCVCamera.try_set_camera_resolution(camera, width, height)
+                if success:
+                    aspect_type, aspect_ratio = OpenCVCamera.get_aspect_ratio(width, height)
+                    return width, height, format_used, aspect_type, aspect_ratio
+            
+            # If everything fails, return current settings
+            current_width = int(camera.get(cv2.CAP_PROP_FRAME_WIDTH))
+            current_height = int(camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            current_fourcc = int(camera.get(cv2.CAP_PROP_FOURCC))
+            format_used = "".join([chr((current_fourcc >> 8 * i) & 0xFF) for i in range(4)])
+            aspect_type, aspect_ratio = OpenCVCamera.get_aspect_ratio(current_width, current_height)
+            
+            return current_width, current_height, format_used, aspect_type, aspect_ratio
 
         for target in targets_to_scan:
-            camera = cv2.VideoCapture(target)
+            print(f"\nProbing camera: {target}")
+            camera = cv2.VideoCapture(target, cv2.CAP_V4L2)
+            
             if camera.isOpened():
-                default_width = int(camera.get(cv2.CAP_PROP_FRAME_WIDTH))
-                default_height = int(camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                default_fps = camera.get(cv2.CAP_PROP_FPS)
-                default_format = camera.get(cv2.CAP_PROP_FORMAT)
+                # Find the best resolution for this specific camera
+                final_width, final_height, format_used, aspect_type, aspect_ratio = find_best_resolution_for_camera(camera, target)
+                
+                # Get other camera properties
+                final_fps = camera.get(cv2.CAP_PROP_FPS)
+                final_fourcc = int(camera.get(cv2.CAP_PROP_FOURCC))
+                
                 camera_info = {
                     "name": f"OpenCV Camera @ {target}",
                     "type": "OpenCV",
                     "id": target,
                     "backend_api": camera.getBackendName(),
                     "default_stream_profile": {
-                        "format": default_format,
-                        "width": default_width,
-                        "height": default_height,
-                        "fps": default_fps,
+                        "format": format_used,
+                        "fourcc_code": final_fourcc,
+                        "width": final_width,
+                        "height": final_height,
+                        "fps": final_fps,
+                        "aspect_ratio": f"{aspect_type} ({aspect_ratio:.3f})",
+                        "aspect_ratio_numeric": aspect_ratio,
                     },
                 }
-
                 found_cameras_info.append(camera_info)
+                print(f"✓ Set resolution: {final_width}x{final_height} ({aspect_type}) using {format_used}")
                 camera.release()
-
+            else:
+                print(f"✗ Failed to open {target}")
         return found_cameras_info
 
     def read(self, color_mode: ColorMode | None = None) -> np.ndarray:
