@@ -76,6 +76,7 @@ from lerobot.datasets.image_writer import safe_stop_image_writer
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
 from lerobot.datasets.pipeline_features import aggregate_pipeline_dataset_features, create_initial_features
 from lerobot.datasets.utils import build_dataset_frame, combine_feature_dicts
+from lerobot.datasets.utils import build_dataset_frame, hw_to_dataset_features, get_hf_datasets_root, _local_dataset_exists
 from lerobot.datasets.video_utils import VideoEncodingManager
 from lerobot.policies.factory import make_policy, make_pre_post_processors
 from lerobot.policies.pretrained import PreTrainedPolicy
@@ -146,7 +147,7 @@ class DatasetRecordConfig:
     # Encode frames in the dataset into video
     video: bool = True
     # Upload dataset to Hugging Face hub.
-    push_to_hub: bool = True
+    push_to_hub: bool = False
     # Upload on private repository on the Hugging Face hub.
     private: bool = False
     # Add tags to your dataset on the hub.
@@ -399,10 +400,28 @@ def record(cfg: RecordConfig) -> LeRobotDataset:
     )
 
     if cfg.resume:
+        # Determine local dataset path
+        local_root = Path(cfg.dataset.root) if cfg.dataset.root else get_hf_datasets_root() / cfg.dataset.repo_id
+        local_exists = _local_dataset_exists(local_root)
+        
+        # Handle different scenarios
+        if not local_exists and not cfg.dataset.push_to_hub:
+            raise FileNotFoundError(
+                f"Resume requested but no local dataset found at '{local_root}' and push_to_hub=False. "
+                "Cannot download from hub when push_to_hub is disabled."
+            )
+        elif not local_exists and cfg.dataset.push_to_hub:
+            logging.info(f"Local dataset not found at '{local_root}', downloading from hub...")
+            allow_download = True
+        else:
+            logging.info(f"Found local dataset at '{local_root}', using local files...")
+            allow_download = False
+
         dataset = LeRobotDataset(
             cfg.dataset.repo_id,
             root=cfg.dataset.root,
             batch_encoding_size=cfg.dataset.video_encoding_batch_size,
+            allow_download=allow_download,
         )
 
         if hasattr(robot, "cameras") and len(robot.cameras) > 0:

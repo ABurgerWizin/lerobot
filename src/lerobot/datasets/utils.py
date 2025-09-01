@@ -22,6 +22,10 @@ from collections.abc import Iterable, Iterator
 from pathlib import Path
 from pprint import pformat
 from typing import Any, Generic, TypeVar
+from types import SimpleNamespace
+from typing import Any
+import os
+from pathlib import Path
 
 import datasets
 import numpy as np
@@ -1360,3 +1364,25 @@ def safe_shard(dataset: datasets.IterableDataset, index: int, num_shards: int) -
     shard_idx = min(dataset.num_shards, index + 1) - 1
 
     return dataset.shard(num_shards, index=shard_idx)
+def _local_dataset_exists(root_path: Path) -> bool:
+    """Check if a local dataset exists with required metadata files."""
+    try:
+        required_files = ["meta/info.json", "meta/episodes.jsonl"]
+        return all((root_path / f).exists() for f in required_files)
+    except Exception:
+        return False
+    
+def get_hf_datasets_root():
+    env = os.environ.get("HF_DATASETS_CACHE")
+    if env:
+        return Path(env).expanduser()
+
+    hf_home = os.environ.get("HF_HOME")
+    if hf_home:
+        return Path(hf_home).expanduser() / "datasets"
+
+    xdg = os.environ.get("XDG_CACHE_HOME")
+    if xdg:
+        return Path(xdg).expanduser() / "huggingface" / "datasets"
+
+    return Path.home() / ".cache" / "huggingface" / "datasets"
