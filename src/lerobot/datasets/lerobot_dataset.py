@@ -83,16 +83,20 @@ class LeRobotDatasetMetadata:
         root: str | Path | None = None,
         revision: str | None = None,
         force_cache_sync: bool = False,
+        allow_download: bool = True,
     ):
         self.repo_id = repo_id
         self.revision = revision if revision else CODEBASE_VERSION
         self.root = Path(root) if root is not None else HF_LEROBOT_HOME / repo_id
 
         try:
-            if force_cache_sync:
+            if force_cache_sync and allow_download:
                 raise FileNotFoundError
             self.load_metadata()
         except (FileNotFoundError, NotADirectoryError):
+            if not allow_download:
+                raise FileNotFoundError("Metadata files not found locally and downloading is disabled.")
+            
             if is_valid_version(self.revision):
                 self.revision = get_safe_version(self.repo_id, self.revision)
 
@@ -341,6 +345,7 @@ class LeRobotDataset(torch.utils.data.Dataset):
         download_videos: bool = True,
         video_backend: str | None = None,
         batch_encoding_size: int = 1,
+        allow_download: bool = True, 
     ):
         """
         2 modes are available for instantiating this class, depending on 2 different use cases:
@@ -465,20 +470,27 @@ class LeRobotDataset(torch.utils.data.Dataset):
         self.root.mkdir(exist_ok=True, parents=True)
 
         # Load metadata
-        self.meta = LeRobotDatasetMetadata(
-            self.repo_id, self.root, self.revision, force_cache_sync=force_cache_sync
-        )
-        if self.episodes is not None and self.meta._version >= packaging.version.parse("v2.1"):
-            episodes_stats = [self.meta.episodes_stats[ep_idx] for ep_idx in self.episodes]
-            self.stats = aggregate_stats(episodes_stats)
+        try:
+            self.meta = LeRobotDatasetMetadata(
+                self.repo_id, self.root, self.revision, force_cache_sync=force_cache_sync, allow_download=allow_download
+            )
+            if self.episodes is not None and self.meta._version >= packaging.version.parse("v2.1"):
+                episodes_stats = [self.meta.episodes_stats[ep_idx] for ep_idx in self.episodes]
+                self.stats = aggregate_stats(episodes_stats)
+        except FileNotFoundError as e:
+            if not allow_download:
+                raise FileNotFoundError(f"Local dataset not found and downloading is disabled: {e}")
+            raise
 
         # Load actual data
         try:
-            if force_cache_sync:
+            if force_cache_sync and not allow_download:
                 raise FileNotFoundError
             assert all((self.root / fpath).is_file() for fpath in self.get_episodes_file_paths())
             self.hf_dataset = self.load_hf_dataset()
         except (AssertionError, FileNotFoundError, NotADirectoryError):
+            if not allow_download:
+                raise FileNotFoundError("Required dataset files not found locally and downloading is disabled.")
             self.revision = get_safe_version(self.repo_id, self.revision)
             self.download_episodes(download_videos)
             self.hf_dataset = self.load_hf_dataset()
@@ -591,6 +603,11 @@ class LeRobotDataset(torch.utils.data.Dataset):
                 for ep_idx in episodes
             ]
             fpaths += video_files
+
+        if fpaths:
+            print(f"Fetched file paths are (frist 10 paths) : {fpaths[:10]}")
+        else:
+            print(f"WARN: no dataset file can be fetched from episodes {episodes}")
 
         return fpaths
 

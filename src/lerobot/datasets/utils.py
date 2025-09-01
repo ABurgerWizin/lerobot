@@ -23,6 +23,8 @@ from pathlib import Path
 from pprint import pformat
 from types import SimpleNamespace
 from typing import Any
+import os
+from pathlib import Path
 
 import datasets
 import jsonlines
@@ -847,3 +849,27 @@ def validate_episode_buffer(episode_buffer: dict, total_episodes: int, features:
             f"In episode_buffer not in features: {buffer_keys - set(features)}"
             f"In features not in episode_buffer: {set(features) - buffer_keys}"
         )
+
+
+def _local_dataset_exists(root_path: Path) -> bool:
+    """Check if a local dataset exists with required metadata files."""
+    try:
+        required_files = ["meta/info.json", "meta/episodes.jsonl"]
+        return all((root_path / f).exists() for f in required_files)
+    except Exception:
+        return False
+    
+def get_hf_datasets_root():
+    env = os.environ.get("HF_DATASETS_CACHE")
+    if env:
+        return Path(env).expanduser()
+
+    hf_home = os.environ.get("HF_HOME")
+    if hf_home:
+        return Path(hf_home).expanduser() / "datasets"
+
+    xdg = os.environ.get("XDG_CACHE_HOME")
+    if xdg:
+        return Path(xdg).expanduser() / "huggingface" / "datasets"
+
+    return Path.home() / ".cache" / "huggingface" / "datasets"
