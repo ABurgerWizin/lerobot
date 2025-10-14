@@ -56,6 +56,7 @@ from lerobot.robots import (  # noqa: F401
     RobotConfig,
     make_robot_from_config,
     so100_follower,
+    so101_follower,
 )
 from lerobot.robots.robot import Robot
 from lerobot.robots.so100_follower.robot_kinematic_processor import (
@@ -65,6 +66,7 @@ from lerobot.robots.so100_follower.robot_kinematic_processor import (
     GripperVelocityToJoint,
     InverseKinematicsRLStep,
 )
+
 from lerobot.teleoperators import (
     gamepad,  # noqa: F401
     keyboard,  # noqa: F401
@@ -393,6 +395,7 @@ def make_processors(
     # Full processor pipeline for real robot environment
     # Get robot and motor information for kinematics
     motor_names = list(env.robot.bus.motors.keys())
+    arm_motor_names = [name for name in motor_names if name != "gripper"]
 
     # Set up kinematics solver if inverse kinematics is configured
     kinematics_solver = None
@@ -416,6 +419,7 @@ def make_processors(
             ForwardKinematicsJointsToEEObservation(
                 kinematics=kinematics_solver,
                 motor_names=motor_names,
+                # arm_motor_names
             )
         )
 

@@ -46,7 +46,7 @@ class Robot(abc.ABC):
     def __init__(self, config: RobotConfig):
         self.robot_type = self.name
         self.id = config.id
-        self.calibration_dir = (
+        self.calibration_dir = Path(
             config.calibration_dir if config.calibration_dir else HF_LEROBOT_CALIBRATION / ROBOTS / self.name
         )
         self.calibration_dir.mkdir(parents=True, exist_ok=True)

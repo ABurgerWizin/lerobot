@@ -1,0 +1,100 @@
+{
+  "type": "gym_manipulator",
+  "env": {
+    
+    "task": "manipulation_task",
+    "robot": {
+      "type": "so101_follower_end_effector",
+      "port": "/dev/ttyACM1",
+      "urdf_path": "/home/wedonttalkabout/repository/lerobot-hirl/SO-ARM100/Simulation/SO101/so101_new_calib.urdf",
+      "target_frame_name": "gripper_frame_link",
+      "cameras": {
+        "front": {
+          "type": "opencv",
+          "index_or_path": 0,
+          "width": 1280,
+          "height": 720,
+          "fps": 30
+        },
+        "wrist": {
+          "type": "opencv",
+          "index_or_path": 1,
+          "width": 1280,
+          "height": 720,
+          "fps": 30
+        }
+      },
+      "end_effector_bounds": {
+        "min": [0.0359, -0.3331, 0.0097],
+        "max": [0.4533, 0.4191, 0.3143]
+      },
+      "end_effector_step_sizes": {
+        "x": 0.025,
+        "y": 0.025,
+        "z": 0.025
+      }
+    },
+    "teleop": {
+      "type": "gamepad",
+      "use_gripper": true
+    }
+  },
+  "observation": {
+    "add_joint_velocity_to_observation": true,
+    "add_current_to_observation": true,
+    "add_ee_pose_to_observation": true,
+    "display_cameras": false,
+    "crop_params_dict": {
+      "observation.images.front": [270, 170, 90, 190],
+      "observation.images.wrist": [0, 0, 480, 640]
+    },
+    "resize_size": [128, 128]
+  },
+  "action": {
+    "control_mode": "end_effector",
+    "use_gripper": true,
+    "gripper_quantization_threshold": null,
+    "gripper_penalty": -0.02,
+    "gripper_penalty_in_reward": false
+  },
+  "data_collection": {
+    "mode": "record",
+    "fps": 10,
+    "control_time_s": 20.0,
+    "reset_time_s": 2.5,
+    "num_episodes": 2,
+    "episode": 0,
+    "fixed_reset_joint_positions": [0.0, 0.0, 0.0, 90.0, 0.0, 5.0]
+  },
+  "dataset": {
+    "repo_id": "armada/so101_manipulation",
+    "root": "/home/wedonttalkabout/.cache/huggingface/lerobot/",
+    "task": "Pick orange cube and put it in the box"
+  },
+  "features": {
+    "observation.images.front": {
+      "type": "image",
+      "shape": [3, 128, 128]
+    },
+    "observation.images.wrist": {
+      "type": "image",
+      "shape": [3, 128, 128]
+    },
+    "observation.state": {
+      "type": "low_dim",
+      "shape": [15]
+    },
+    "action": {
+      "type": "low_dim",
+      "shape": [4]
+    }
+  },
+  "policy": {
+    "pretrained_path": null,
+    "device": "cpu"
+  },
+  "reward_classifier": {
+    "enabled": false,
+    "pretrained_path": null
+  }
+}
