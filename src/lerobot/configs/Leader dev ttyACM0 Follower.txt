@@ -1,0 +1,404 @@
+Leader /dev/ttyACM0
+Follower /dev/ttyACM1
+ls
+lerobot-teleoperate \
+    --robot.type=so101_follower \
+    --robot.port=/dev/ttyACM1 \
+    --robot.id=my_awesome_follower_arm \
+    --robot.cameras="{ front: {type: opencv, index_or_path: 0, width: 1920, height: 1080, fps: 30}}" \
+    --teleop.type=so101_leader \
+    --teleop.port=/dev/ttyACM0 \
+    --teleop.id=my_awesome_leader_arm \
+    --display_data=true
+
+# -------------------------------- recalibration
+lerobot-calibrate \
+    --robot.type=so101_follower \
+    --robot.port=/dev/ttyACM1 \
+    --robot.id=my_awesome_follower_arm
+    
+lerobot-calibrate \
+    --teleop.type=so101_leader \
+    --teleop.port=/dev/ttyACM0 \
+    --teleop.id=my_awesome_leader_arm 
+
+# ---------------------------------- teleoperate with cams
+lerobot-teleoperate     --robot.type=so101_follower     --robot.port=/dev/ttyACM1     --robot.id=my_awesome_follower_arm     --robot.cameras="{ front: {type: opencv, index_or_path: /dev/video4, width: 640, height: 360, fps: 30}, arm: {type: opencv, index_or_path: /dev/video6, width: 640, height: 480, fps: 30}}"     --teleop.type=so101_leader     --teleop.port=/dev/ttyACM0     --teleop.id=my_awesome_leader_arm     --display_data=true
+lerobot-teleoperate     --robot.type=so101_follower     --robot.port=/dev/ttyACM1     --robot.id=my_awesome_follower_arm     --robot.cameras="{ OBS_IMAGE_1: {type: opencv, index_or_path: /dev/video6, width: 1280, height: 720, fps: 30}, OBS_IMAGE_2: {type: opencv, index_or_path: /dev/video0, width: 800, height: 600, fps: 30}}"     --teleop.type=so101_leader     --teleop.port=/dev/ttyACM0     --teleop.id=my_awesome_leader_arm     --display_data=true
+
+# -----------------------------------
+
+lerobot-record \
+    --robot.type=so101_follower \
+    --robot.port=/dev/ttyACM1 \
+    --robot.id=my_awesome_follower_arm \
+    --robot.cameras="{ front: {type: opencv, index_o--robot.cameras="{ front: {type: opencv, index_or_path: /dev/video0, width: 1280, height: 720, fps: 30}, overhead: {type: opencv, index_or_path: /dev/video6, width: 1280, height: 720, fps: 30}}" \r_path: /dev/video0, width: 1280, height: 720, fps: 30}, overhead: {type: opencv, index_or_path: /dev/video6, width: 1280, height: 720, fps: 30}}" \
+    --teleop.type=so101_leader \
+    --teleop.port=/dev/ttyACM0 \
+    --teleop.id=my_awesome_leader_arm \
+    --display_data=true \
+    --dataset.push_to_hub=False \
+    --dataset.repo_id=armada/pick_n_place_b \
+    --dataset.num_episodes=50 \
+    --dataset.single_task="Put orange boat into box" \
+    --dataset.episode_time_s=75 \
+    --dataset.reset_time_s=45 \
+    --dataset.root=/home/wedonttalkabout/.cache/huggingface/lerobot/armada/pick_n_place_b/ \
+    --resume=true
+    
+    
+# -----------------------------------------
+
+lerobot-record  \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.cameras="{ front: {type: opencv, index_or_path: /dev/video0, width: 1280, height: 720, fps: 30}, overhead: {type: opencv, index_or_path: /dev/video6, width: 1280, height: 720, fps: 30}}" \
+  --robot.id=my_awesome_follower_arm \
+  --display_data=true \
+  --dataset.repo_id=idont/eval_so101_0904 \
+  --dataset.single_task="Put orange boat into box" \
+  --policy.path="/home/wedonttalkabout/Downloads/smolvla_armada_pick_n_place0903_ckpt100k/100000/pretrained_model" \
+  --teleop.type=so101_leader \
+  --teleop.port=/dev/ttyACM0 \
+  --teleop.id=my_awesome_leader_arm
+  
+  
+lerobot-record  \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.cameras="{ front: {type: opencv, index_or_path: /dev/video0, width: 1280, height: 720, fps: 30}}" \
+  --robot.id=my_awesome_follower_arm \
+  --display_data=true \
+  --dataset.repo_id=armada/eval_pick_n_place_a \
+  --dataset.single_task="Put orange boat into box" \
+  --policy.path="/home/wedonttalkabout/Downloads/train_pick_n_place_ckpt0902_100kstep_light/act_armada_0902/checkpoints/100000/pretrained_model" \
+  --teleop.type=so101_leader \
+  --teleop.port=/dev/ttyACM0 \
+  --teleop.id=my_awesome_leader_arm
+  
+  
+/home/wedonttalkabout/Downloads/train_pick_n_place_ckpt0902_100kstep_light/act_armada_0902/checkpoints/100000
+
+Training avec les cubes une seule position
+
+lerobot-record  \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --rlerobot-record  \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.cameras="{ overhead: {type: opencv, index_or_path: /dev/video6, width: 1280, height: 720, fps: 30}}" \
+  --robot.id=my_awesome_follower_arm \
+  --display_data=true \
+  --dataset.repo_id=armada/picksameplace \
+  --dataset.single_task="Put orange cube into box" \
+  --teleop.type=so101_leader \
+  --teleop.port=/dev/ttyACM0 \
+  --teleop.id=my_awesome_leader_armobot.cameras="{ overhead: {type: opencv, index_or_path: /dev/video6, width: 1280, height: 720, fps: 30}}" \
+  --robot.id=my_awesome_follower_arm \
+  --display_data=true \
+  --dataset.repo_id=armada/picksameplace \
+  --dataset.single_task="Put orange cube into box" \
+  --teleop.type=so101_leader \
+  --teleop.port=/dev/ttyACM0 \
+  --teleop.id=my_awesome_leader_arm
+  
+  /home/wedonttalkabout/.cache/huggingface/lerobot/armada/picksameplace
+  
+  lerobot-replay  \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.id=my_awesome_follower_arm \
+  --dataset.repo_id=armada/picksameplace \
+  --dataset.root =/home/wedonttalkabout/.cache/huggingface/lerobot/armada/picksameplace \
+  --dataset.episode 5 
+does not work ?
+
+lerobot-train \
+--dataset.repo_id=armada/picksameplace \
+--policy.type=act \
+--job_name=armada \
+--policy.device=cuda \
+--wandb.enable=false \
+--policy.repo_id=armada/picksameplace \
+--dataset.root /home/wedonttalkabout/.cache/huggingface/lerobot/armada/picksameplace \
+--save_freq=1000 \
+--batch_size=8
+
+/home/wedonttalkabout/repository/lerobot/outputs/train/2025-09-08/15-46-10_armada/checkpoints/033000/pretrained_model
+
+lerobot-record  \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.cameras="{ overhead: {type: opencv, index_or_path: /dev/video6, width: 1280, height: 720, fps: 30}}" \
+  --robot.id=my_awesome_follower_arm \
+  --display_data=true \
+  --dataset.repo_id=armada/eval_picksameplace \
+  --dataset.single_task="Put orange cube into box" \
+  --policy.path="/home/wedonttalkabout/repository/lerobot/outputs/train/2025-09-08/15-46-10_armada/checkpoints/033000/pretrained_model" \
+  --teleop.type=so101_leader \
+  --teleop.port=/dev/ttyACM0 \
+  --teleop.id=my_awesome_leader_arm
+  
+  
+
+lerobot-train \
+--dataset.repo_id=armada/picksameplace \
+--policy.type=smolvla \
+--job_name=armada \
+--policy.device=cuda \
+--wandb.enable=false \
+--policy.repo_id=armada/picksameplace_sm \
+--dataset.root /home/wedonttalkabout/.cache/huggingface/lerobot/armada/picksameplace \
+--save_freq=5000 \
+--batch_size=8
+
+/home/wedonttalkabout/repository/lerobot/outputs/train/2025-09-09/09-12-35_armada/checkpoints/050000/pretrained_model
+
+lerobot-record  \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.cameras="{ overhead: {type: opencv, index_or_path: /dev/video6, width: 1280, height: 720, fps: 30}}" \
+  --robot.id=my_awesome_follower_arm \
+  --display_data=true \
+  --dataset.repo_id=armada/eval_picksameplace_sm \
+  --dataset.single_task="Put orange cube into box" \
+  --policy.path="/home/wedonttalkabout/repository/lerobot/outputs/train/2025-09-09_first/09-12-35_armada/checkpoints/050000/pretrained_model" \
+  --teleop.type=so101_leader \
+  --teleop.port=/dev/ttyACM0 \
+  --teleop.id=my_awesome_leader_arm
+  
+  
+  enrich
+  
+lerobot-record \
+    --robot.type=so101_follower \
+    --robot.port=/dev/ttyACM1 \
+    --robot.id=my_awesome_follower_arm \
+    --robot.cameras="{ overhead: {type: opencv, index_or_path: /dev/video6, width: 1280, height: 720, fps: 30}}" \
+    --teleop.type=so101_leader \
+    --teleop.port=/dev/ttyACM0 \
+    --teleop.id=my_awesome_leader_arm \
+    --display_data=true \
+    --dataset.push_to_hub=False \
+    --dataset.repo_id=armada/picksameplace \
+    --dataset.num_episodes=50 \
+    --dataset.single_task="Put orange cube into box" \
+    --dataset.episode_time_s=75 \
+    --dataset.reset_time_s=45 \
+    --dataset.root=/home/wedonttalkabout/.cache/huggingface/lerobot/armada/picksameplace/ \
+    --resume=true
+    
+ lerobot-train \
+--dataset.repo_id=armada/picksameplace \
+--policy.type=smolvla \
+--job_name=armada \
+--policy.device=cuda \
+--wandb.enable=false \
+--policy.repo_id=armada/picksameplace_sm2pos \
+--dataset.root /home/wedonttalkabout/.cache/huggingface/lerobot/armada/picksameplace \
+--save_freq=10000 \
+--batch_size=8
+
+lerobot-record  \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.cameras="{ overhead: {type: opencv, index_or_path: /dev/video6, width: 1280, height: 720, fps: 30}}" \
+  --robot.id=my_awesome_follower_arm \
+  --display_data=true \
+  --dataset.repo_id=armada/eval_picksameplace_sm2pos \
+  --dataset.single_task="Put orange cube into box" \
+  --policy.path="/home/wedonttalkabout/repository/lerobot/outputs/train/2025-09-09/18-02-34_armada/checkpoints/100000/pretrained_model" \
+  --teleop.type=so101_leader \
+  --teleop.port=/dev/ttyACM0 \
+  --teleop.id=my_awesome_leader_arm
+
+
+
+  with pretrained smolvla
+  
+  python lerobot/scripts/train.py \
+  --policy.path=/home/wedonttalkabout/repository/lerobot/outputs/train/smolvla_base \
+  --policy.repo_id=armada/smol_vla_base \
+  --dataset.root /home/wedonttalkabout/.cache/huggingface/lerobot/armada/picksameplace \
+  --batch_size=8 \
+  --steps=20000 \
+  --save_freq=5000 \
+  --output_dir=outputs/train/my_smolvla \
+  --dataset.repo_id=armada/smolvla_fine_tune_2pos \
+  --job_name=my_smolvla_training \
+  --policy.device=cuda \
+  --wandb.enable=false
+
+  lerobot-record  \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.cameras="{ overhead: {type: opencv, index_or_path: /dev/video6, width: 1280, height: 720, fps: 30}}" \
+  --robot.id=my_awesome_follower_arm \
+  --display_data=true \
+  --dataset.repo_id=armada/eval_smolvla_fine_tune_2pos \
+  --dataset.single_task="Pick orange cube and put it in the box" \
+  --policy.path="/home/wedonttalkabout/repository/lerobot/outputs/train/smolvla_base"
+
+
+    python lerobot/scripts/train.py \
+  --policy.path=/home/wedonttalkabout/repository/lerobot/outputs/train/smolvla_base \
+  --policy.repo_id=armada/smol_vla_base50 \
+  --dataset.root /home/wedonttalkabout/.cache/huggingface/lerobot/armada/picksameplace50/picksameplace \
+  --batch_size=8 \
+  --steps=20000 \
+  --save_freq=5000 \
+  --output_dir=outputs/train/my_smolvla50 \
+  --dataset.repo_id=armada/smolvla_fine_tune_2pos50 \
+  --job_name=my_smolvla_training \
+  --policy.device=cuda \
+  --wandb.enable=false
+  
+  
+  
+  
+    lerobot-record  \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.cameras="{ overhead: {type: opencv, index_or_path: /dev/video6, width: 1280, height: 720, fps: 30}}" \
+  --robot.id=my_awesome_follower_arm \
+  --display_data=true \
+  --dataset.repo_id=armada/eval_smolvla_fine_tune_2pos2 \
+  --dataset.single_task="Put orange cube into box" \
+  --policy.path="/home/wedonttalkabout/repository/lerobot/src/outputs/train/my_smolvla50/checkpoints/020000/pretrained_model"
+  
+  
+  
+  record 2 cam
+  
+  
+  lerobot-record  \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.cameras="{ OBS_IMAGE_1: {type: opencv, index_or_path: /dev/video6, width: 1280, height: 720, fps: 30}, OBS_IMAGE_2: {type: ffmpeg, index_or_path: /dev/video0, width: 1280, height: 960, fps: 30}}" \
+  --robot.id=my_awesome_follower_arm \
+  --display_data=true \
+  --dataset.repo_id=armada/picksameplace2cams4 \
+  --dataset.num_episodes 2 \
+  --dataset.single_task="Pick orange cube and place into box" \
+  --teleop.type=so101_leader \
+  --teleop.port=/dev/ttyACM0 \
+  --teleop.id=my_awesome_leader_arm
+  
+  lerobot-find-joint-limits \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.id=my_awesome_follower_arm \
+  --teleop.type=so101_leader \
+  --teleop.port=/dev/ttyACM0 \
+  --teleop.id=my_awesome_leader_arm
+  
+  
+Max ee position [0.4533, 0.4191, 0.3143]
+Min ee position [0.0359, -0.3331, 0.0097]
+Max joint pos position [78.2844, 53.1488, 98.4678, 58.196, 68.547, 98.545]
+Min joint pos position [-90.4946, -59.647, -48.0847, -14.0503, -26.6911, 1.7196]
+
+
+just to test SSH
+old style record dataset
+
+  lerobot-record  \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.cameras="{ overhead: {type: opencv, index_or_path: /dev/video6, width: 1280, height: 720, fps: 30}}" \
+  --robot.id=my_awesome_follower_arm \
+  --display_data=true \
+  --dataset.repo_id=armada/nest \
+  --dataset.num_episodes 50 \
+  --dataset.single_task="Pick orange cube and put it in the box" \
+    --teleop.type=so101_leader \
+  --teleop.port=/dev/ttyACM0 \
+  --teleop.id=my_awesome_leader_arm 
+
+load existing pretain pretrained_model
+
+ lerobot-record  \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.cameras="{ overhead: {type: opencv, index_or_path: /dev/video6, width: 1280, height: 720, fps: 30}}" \
+  --robot.id=my_awesome_follower_arm \
+  --display_data=true \
+  --dataset.repo_id=armada/eval_smolvla_fine_tune_2pos2 \
+  --dataset.single_task="Put orange cube into box" \
+  --policy.path="/home/wedonttalkabout/repository/lerobot/src/outputs/train/my_smolvla50/checkpoints/020000/pretrained_model"
+
+
+"teleop": {
+      "type": "gamepad",
+      "use_gripper": true
+    },
+
+
+new joint limits for so101 leader and follower pair
+
+Max ee position [0.4451, 0.3109, 0.1614]
+Min ee position [0.014, -0.3105, -0.0289]
+Max joint pos position [84.2349, 57.6508, 99.3719, 88.9451, 93.1624, 73.4971]
+Min joint pos position [-94.5904, -82.8206, -49.4841, 0.5063, -86.3248, 1.616]
+
+ lerobot-train \
+--dataset.repo_id=armada/picksameplace \
+--policy.type=smolvla \
+--job_name=armada \
+--policy.device=cuda \
+--wandb.enable=false \
+--policy.repo_id=armada/picksameplace_sm2pos \
+--dataset.root /home/wedonttalkabout/.cache/huggingface/lerobot/armada/picksameplace \
+--save_freq=10000 \
+--batch_size=8
+
+ACTOR LEARNER
+python -m lerobot.rl.learner --config_path "src/lerobot/configs/env_config_actor_learner.json"
+
+python -m lerobot.rl.actor --config_path "src/lerobot/configs/env_config_actor_learner.json"
+
+
+GYM MANIPULATOR
+python -m lerobot.rl.gym_manipulator --config_path "src/lerobot/configs/env_config_so101_armada_1013_v1 (gamepad).json"
+
+WARNING 2025-10-15 17:38:43 /factory.py:369 You are instantiating a policy from scratch and its features are parsed from an environment rather than a dataset. Normalization modules inside the policy will have infinite values by default without stats from a dataset.
+
+
+------17/10/25
+
+Good datasets to save / keep
+datasets
+one camera 40 repetition of success
+/home/wedonttalkabout/.cache/huggingface/lerobot/armada/nest_dont_trust_docs
+
+Record new dataset
+  lerobot-record  \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.cameras="{ OBS_IMAGE_1: {type: opencv, index_or_path: /dev/video4, width: 1280, height: 720, fps: 30}}" \
+  --robot.id=my_awesome_follower_arm \
+  --display_data=true \
+  --dataset.repo_id=armada/1710onecamonepos \
+  --dataset.num_episodes 50 \
+  --dataset.single_task="Pick orange cube and put it in the box" \
+    --teleop.type=so101_leader \
+  --teleop.port=/dev/ttyACM0 \
+  --teleop.id=my_awesome_leader_arm 
+
+Models
+
+sudo chmod 666 /dev/ttyACM1
+sudo chmod 666 /dev/ttyACM0
+
+PLAY TRAINED MODEL 
+
+ lerobot-record  \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM1 \
+  --robot.cameras="{ OBS_IMAGE_1: {type: opencv, index_or_path: /dev/video3, width: 1280, height: 720, fps: 30}}" \
+  --robot.id=my_awesome_follower_arm \
+  --display_data=true \
+  --dataset.repo_id=armada/eval_smolvla_fine_tune_2pos2 \
+  --dataset.single_task="Pick orange cube and put it in the box" \
+  --policy.path="/home/wedonttalkabout/repository/lerobot/src/outputs/train/so101_smolvla_1017onecam/checkpoints/020000/pretrained_model"

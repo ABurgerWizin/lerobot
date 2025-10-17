@@ -87,6 +87,7 @@ class LeRobotDatasetMetadata:
         revision: str | None = None,
         force_cache_sync: bool = False,
         allow_download: bool = True,
+        metadata_buffer_size: int = 10,
     ):
         self.repo_id = repo_id
         self.revision = revision if revision else CODEBASE_VERSION
@@ -693,11 +694,15 @@ class LeRobotDataset(torch.utils.data.Dataset):
 
         self.root.mkdir(exist_ok=True, parents=True)
 
+
         # Load metadata
         try:
             self.meta = LeRobotDatasetMetadata(
                 self.repo_id, self.root, self.revision, force_cache_sync=force_cache_sync, allow_download=allow_download
             )
+            self._lazy_loading = False
+            self._recorded_frames = self.meta.total_frames
+            self._writer_closed_for_reading = False
             if self.episodes is not None and self.meta._version >= packaging.version.parse("v2.1"):
                 episodes_stats = [self.meta.episodes_stats[ep_idx] for ep_idx in self.episodes]
                 self.stats = aggregate_stats(episodes_stats)

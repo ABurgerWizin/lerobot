@@ -9,7 +9,7 @@
       "cameras": {
         "front": {
           "type": "opencv",
-          "index_or_path": 0,
+          "index_or_path": 6,
           "width": 1280,
           "height": 720,
           "fps": 30
@@ -17,22 +17,19 @@
       }
     },
     "teleop": {
-      "type": "so101_leader",
-      "port": "/dev/ttyACM0",
-      "id": "my_awesome_leader_arm",
-      "use_degrees": true
-
+      "type": "gamepad",
+      "use_gripper": true
     },
     "processor": {
-      "control_mode": "leader",
+      "control_mode": "gamepad",
       "observation": {
         "add_joint_velocity_to_observation": true,
         "add_current_to_observation": true,
-        "display_cameras": false
+        "display_cameras": true
       },
       "image_preprocessing": {
         "crop_params_dict": {
-          "observation.images.front": [270, 170, 90, 190]
+          "observation.images.front": [63, 391, 404, 665]
         },
         "resize_size": [128, 128]
       },
@@ -42,21 +39,21 @@
       },
       "reset": {
         "fixed_reset_joint_positions": [0.0, 0.0, 0.0, 90.0, 0.0, 5.0],
-        "reset_time_s": 5,
-        "control_time_s": 30.0,
-        "terminate_on_success": true
+        "reset_time_s": 10,
+        "control_time_s": 60.0,
+        "terminate_on_success": false
       },
       "inverse_kinematics": {
         "urdf_path": "/home/wedonttalkabout/repository/lerobot-hirl/SO-ARM100/Simulation/SO101/so101_new_calib.urdf",
         "target_frame_name": "gripper_frame_link",
         "end_effector_bounds": {
-          "min": [0.014, -0.3105, -0.0289],
-          "max": [0.5451, 0.3109, 0.1614]
+          "min": [-0.0329, -0.4403, -0.0353],
+          "max": [0.445, 0.4332, 0.5041]
         },
         "end_effector_step_sizes": {
           "x": 0.02,
           "y": 0.02,
-          "z": 0.002
+          "z": 0.01
         }
       },
       "reward_classifier": {
@@ -68,10 +65,10 @@
     }
   },
   "dataset": {
-    "repo_id": "armada/so101_manipulation",
+    "repo_id": "armada/hirl_samples_neg",
     "task": "Pick orange cube and put it in the box",
-    "root": "/home/wedonttalkabout/.cache/huggingface/lerobot/armada/so101_manipulation",
-    "num_episodes_to_record": 2,
+    "root": "/home/wedonttalkabout/.cache/huggingface/lerobot/armada/hirl_samples_neg",
+    "num_episodes_to_record": 10,
     "replay_episode": null,
     "push_to_hub": false
   },
